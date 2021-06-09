@@ -1,0 +1,9 @@
+@extensibility(MUTABLE)
+struct carBasicInfo {
+  @key
+  string<16> licenceNumber;
+  int16 speed;
+  float posX;
+  float posY;
+};
+
