@@ -21,6 +21,56 @@
 
 using namespace application;
 
+class DataWriterListener : public DDSDataWriterListener {
+public:
+    // virtual void on_offered_deadline_missed(
+    //         DDSDataWriter * /*writer*/,
+    //         const DDS_OfferedDeadlineMissedStatus & /*status*/)
+    // {
+    //     printf("DataWriterListener: on_offered_deadline_missed()\n");
+    // }
+
+    // virtual void on_liveliness_lost(
+    //         DDSDataWriter * /*writer*/,
+    //         const DDS_LivelinessLostStatus & /*status*/)
+    // {
+    //     printf("DataWriterListener: on_liveliness_lost()\n");
+    // }
+
+    // virtual void on_offered_incompatible_qos(
+    //         DDSDataWriter * /*writer*/,
+    //         const DDS_OfferedIncompatibleQosStatus & /*status*/)
+    // {
+    //     printf("DataWriterListener: on_offered_incompatible_qos()\n");
+    // }
+
+    virtual void on_publication_matched(
+            DDSDataWriter *writer,
+            const DDS_PublicationMatchedStatus &status)
+    {
+        printf("DataWriterListener: on_publication_matched() - FROM ZHIKAI\n");
+        if (status.current_count_change < 0) {
+            printf("lost a subscription\n");
+        } else {
+            printf("found a subscription\n");
+        }
+    }
+
+    // virtual void on_reliable_writer_cache_changed(
+    //         DDSDataWriter *writer,
+    //         const DDS_ReliableWriterCacheChangedStatus &status)
+    // {
+    //     printf("DataWriterListener: on_reliable_writer_cache_changed()\n");
+    // }
+
+    // virtual void on_reliable_reader_activity_changed(
+    //         DDSDataWriter *writer,
+    //         const DDS_ReliableReaderActivityChangedStatus &status)
+    // {
+    //     printf("DataWriterListener: on_reliable_reader_activity_changed()\n");
+    // }
+};
+
 static int shutdown_participant(
     DDSDomainParticipant *participant,
     const char *shutdown_message,
@@ -100,14 +150,23 @@ int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
     //     return shutdown_participant(participant, "create_datawriter error", EXIT_FAILURE);
     // }
 
+/* We will use the Data Writer Listener defined above to print
+     * a message when some of events are triggered in the DataWriter.
+     * To do that, first we have to pass the writer_listener and then
+     * we have to enable all status in the status mask.
+     */
+    DataWriterListener *writer_listener = new DataWriterListener();
+    DDS_StatusMask mask = DDS_PUBLICATION_MATCHED_STATUS;
+
      // This DataWriter writes data on "Example carBasicInfo" Topic
     DDSDataWriter *untyped_writer = publisher->create_datawriter_with_profile(
         topic,
         "ExampleTrainingLibrary",
         "ExampleTrainingDurabilityProfile",
-        NULL /* listener */,
-        DDS_STATUS_MASK_NONE);
+        writer_listener /* listener */,
+        mask);
     if (untyped_writer == NULL) {
+        delete writer_listener;
         return shutdown_participant(participant, "create_datawriter error", EXIT_FAILURE);
     }
 

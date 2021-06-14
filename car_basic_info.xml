@@ -25,6 +25,7 @@
         <datawriter_qos>
           <durability>
             <kind>TRANSIENT_LOCAL_DURABILITY_QOS</kind>
+            <writer_depth>5</writer_depth>
           </durability>
           <history>
             <kind>KEEP_ALL_HISTORY_QOS</kind>
