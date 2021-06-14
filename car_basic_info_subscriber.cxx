@@ -65,6 +65,28 @@ unsigned int process_data(carBasicInfoDataReader *typed_reader)
 
 int run_subscriber_application(unsigned int domain_id, unsigned int sample_count)
 {
+     /* To load my_custom_qos_profiles.xml, as explained above, we need to modify
+     * the  DDSTheParticipantFactory Profile QoSPolicy */
+    DDS_DomainParticipantFactoryQos factory_qos;
+    DDSTheParticipantFactory->get_qos(factory_qos);
+
+    /* We are only going to add one XML file to the url_profile sequence, so we
+     * ensure a length of 1,1. */
+    factory_qos.profile.url_profile.ensure_length(1, 1);
+
+    /* The XML file will be loaded from the working directory. That means, you
+     * need to run the example like this:
+     * ./objs/<architecture>/profiles_publisher
+     * (see README.txt for more information on how to run the example).
+     *
+     * Note that you can specify the absolute path of the XML QoS file to avoid
+     * this problem.
+     */
+    factory_qos.profile.url_profile[0] =
+            DDS_String_dup("car_basic_info.xml");
+
+    DDSTheParticipantFactory->set_qos(factory_qos);
+
     // Start communicating in a domain, usually one participant per application
     DDSDomainParticipant *participant =
     DDSTheParticipantFactory->create_participant(
@@ -105,9 +127,10 @@ int run_subscriber_application(unsigned int domain_id, unsigned int sample_count
     }
 
     // This DataReader reads data on "Example carBasicInfo" Topic
-    DDSDataReader *untyped_reader = subscriber->create_datareader(
+    DDSDataReader *untyped_reader = subscriber->create_datareader_with_profile(
         topic,
-        DDS_DATAREADER_QOS_DEFAULT,
+        "ExampleTrainingLibrary",
+        "ExampleTrainingDurabilityProfile",
         NULL,
         DDS_STATUS_MASK_NONE);
     if (untyped_reader == NULL) {

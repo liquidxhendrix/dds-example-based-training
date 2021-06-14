@@ -28,6 +28,29 @@ static int shutdown_participant(
 
 int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
 {
+
+    /* To load my_custom_qos_profiles.xml, as explained above, we need to modify
+     * the  DDSTheParticipantFactory Profile QoSPolicy */
+    DDS_DomainParticipantFactoryQos factory_qos;
+    DDSTheParticipantFactory->get_qos(factory_qos);
+
+    /* We are only going to add one XML file to the url_profile sequence, so we
+     * ensure a length of 1,1. */
+    factory_qos.profile.url_profile.ensure_length(1, 1);
+
+    /* The XML file will be loaded from the working directory. That means, you
+     * need to run the example like this:
+     * ./objs/<architecture>/profiles_publisher
+     * (see README.txt for more information on how to run the example).
+     *
+     * Note that you can specify the absolute path of the XML QoS file to avoid
+     * this problem.
+     */
+    factory_qos.profile.url_profile[0] =
+            DDS_String_dup("car_basic_info.xml");
+
+    DDSTheParticipantFactory->set_qos(factory_qos);
+
     // Start communicating in a domain, usually one participant per application
     DDSDomainParticipant *participant =
     DDSTheParticipantFactory->create_participant(
@@ -67,10 +90,21 @@ int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
         return shutdown_participant(participant, "create_topic error", EXIT_FAILURE);
     }
 
-    // This DataWriter writes data on "Example carBasicInfo" Topic
-    DDSDataWriter *untyped_writer = publisher->create_datawriter(
+    // // This DataWriter writes data on "Example carBasicInfo" Topic
+    // DDSDataWriter *untyped_writer = publisher->create_datawriter(
+    //     topic,
+    //     DDS_DATAWRITER_QOS_DEFAULT,
+    //     NULL /* listener */,
+    //     DDS_STATUS_MASK_NONE);
+    // if (untyped_writer == NULL) {
+    //     return shutdown_participant(participant, "create_datawriter error", EXIT_FAILURE);
+    // }
+
+     // This DataWriter writes data on "Example carBasicInfo" Topic
+    DDSDataWriter *untyped_writer = publisher->create_datawriter_with_profile(
         topic,
-        DDS_DATAWRITER_QOS_DEFAULT,
+        "ExampleTrainingLibrary",
+        "ExampleTrainingDurabilityProfile",
         NULL /* listener */,
         DDS_STATUS_MASK_NONE);
     if (untyped_writer == NULL) {
@@ -85,13 +119,26 @@ int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
     }
 
     // Create data for writing, allocating all members
-    carBasicInfo *data = carBasicInfoTypeSupport::create_data();
-    if (data == NULL) {
+    carBasicInfo *dataA = carBasicInfoTypeSupport::create_data();
+    if (dataA == NULL) {
         return shutdown_participant(
             participant,
             "carBasicInfoTypeSupport::create_data error",
             EXIT_FAILURE);
     }
+
+    // Create data for writing, allocating all members
+    carBasicInfo *dataB = carBasicInfoTypeSupport::create_data();
+    if (dataB == NULL) {
+        return shutdown_participant(
+            participant,
+            "carBasicInfoTypeSupport::create_data error",
+            EXIT_FAILURE);
+    }
+
+
+    DDS_InstanceHandle_t instanceHandleA;
+    DDS_InstanceHandle_t instanceHandleB;
 
     // Main loop, write data
     for (unsigned int samples_written = 0;
@@ -99,11 +146,31 @@ int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
     ++samples_written) {
 
         // Modify the data to be written here
-        data->speed = static_cast<DDS_Short>(samples_written);
+
+        //Send 1st instance
+        dataA->licenceNumber = DDS_String_dup("ABC1234");
+
+        instanceHandleA = typed_writer->register_instance(*dataA);
+        
+        dataA->speed = static_cast<DDS_Short>(samples_written);
 
         std::cout << "Writing carBasicInfo, count " << samples_written 
         << std::endl;
-        retcode = typed_writer->write(*data, DDS_HANDLE_NIL);
+        retcode = typed_writer->write(*dataA, instanceHandleA);
+        if (retcode != DDS_RETCODE_OK) {
+            std::cerr << "write error " << retcode << std::endl;
+        }
+
+        //Send 2nd instance
+        dataB->licenceNumber = DDS_String_dup("XYZ3456");
+
+        instanceHandleB = typed_writer->register_instance(*dataB);
+        
+        dataB->speed = static_cast<DDS_Short>(samples_written);
+
+        std::cout << "Writing carBasicInfo, count " << samples_written 
+        << std::endl;
+        retcode = typed_writer->write(*dataB, instanceHandleB);
         if (retcode != DDS_RETCODE_OK) {
             std::cerr << "write error " << retcode << std::endl;
         }
@@ -113,8 +180,18 @@ int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
         NDDSUtility::sleep(send_period);
     }
 
+    typed_writer->unregister_instance(*dataA,instanceHandleA);
+    typed_writer->unregister_instance(*dataB,instanceHandleB);
+
     // Delete previously allocated carBasicInfo, including all contained elements
-    retcode = carBasicInfoTypeSupport::delete_data(data);
+    retcode = carBasicInfoTypeSupport::delete_data(dataA);
+    if (retcode != DDS_RETCODE_OK) {
+        std::cerr << "carBasicInfoTypeSupport::delete_data error " << retcode
+        << std::endl;
+    }
+
+    // Delete previously allocated carBasicInfo, including all contained elements
+    retcode = carBasicInfoTypeSupport::delete_data(dataB);
     if (retcode != DDS_RETCODE_OK) {
         std::cerr << "carBasicInfoTypeSupport::delete_data error " << retcode
         << std::endl;

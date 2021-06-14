@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "iostream": "cpp"
+    },
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/liquidxhendrix/Projects/phase2/objs/x64Linux4gcc7.3.0",
+            "binaryPath": "/home/liquidxhendrix/Projects/phase2/objs/x64Linux4gcc7.3.0/car_basic_info_publisher",
+            "binaryArgs": []
+        }
+    ]
+}
