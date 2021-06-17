@@ -23,26 +23,26 @@ using namespace application;
 
 class DataWriterListener : public DDSDataWriterListener {
 public:
-    // virtual void on_offered_deadline_missed(
-    //         DDSDataWriter * /*writer*/,
-    //         const DDS_OfferedDeadlineMissedStatus & /*status*/)
-    // {
-    //     printf("DataWriterListener: on_offered_deadline_missed()\n");
-    // }
+    virtual void on_offered_deadline_missed(
+            DDSDataWriter * /*writer*/,
+            const DDS_OfferedDeadlineMissedStatus & /*status*/)
+    {
+        printf("DataWriterListener: on_offered_deadline_missed()\n");
+    }
 
-    // virtual void on_liveliness_lost(
-    //         DDSDataWriter * /*writer*/,
-    //         const DDS_LivelinessLostStatus & /*status*/)
-    // {
-    //     printf("DataWriterListener: on_liveliness_lost()\n");
-    // }
+    virtual void on_liveliness_lost(
+            DDSDataWriter * /*writer*/,
+            const DDS_LivelinessLostStatus & /*status*/)
+    {
+        printf("DataWriterListener: on_liveliness_lost()\n");
+    }
 
-    // virtual void on_offered_incompatible_qos(
-    //         DDSDataWriter * /*writer*/,
-    //         const DDS_OfferedIncompatibleQosStatus & /*status*/)
-    // {
-    //     printf("DataWriterListener: on_offered_incompatible_qos()\n");
-    // }
+    virtual void on_offered_incompatible_qos(
+            DDSDataWriter * /*writer*/,
+            const DDS_OfferedIncompatibleQosStatus & /*status*/)
+    {
+        printf("DataWriterListener: on_offered_incompatible_qos()\n");
+    }
 
     virtual void on_publication_matched(
             DDSDataWriter *writer,
@@ -56,19 +56,19 @@ public:
         }
     }
 
-    // virtual void on_reliable_writer_cache_changed(
-    //         DDSDataWriter *writer,
-    //         const DDS_ReliableWriterCacheChangedStatus &status)
-    // {
-    //     printf("DataWriterListener: on_reliable_writer_cache_changed()\n");
-    // }
+    virtual void on_reliable_writer_cache_changed(
+            DDSDataWriter *writer,
+            const DDS_ReliableWriterCacheChangedStatus &status)
+    {
+        printf("DataWriterListener: on_reliable_writer_cache_changed()\n");
+    }
 
-    // virtual void on_reliable_reader_activity_changed(
-    //         DDSDataWriter *writer,
-    //         const DDS_ReliableReaderActivityChangedStatus &status)
-    // {
-    //     printf("DataWriterListener: on_reliable_reader_activity_changed()\n");
-    // }
+    virtual void on_reliable_reader_activity_changed(
+            DDSDataWriter *writer,
+            const DDS_ReliableReaderActivityChangedStatus &status)
+    {
+        printf("DataWriterListener: on_reliable_reader_activity_changed()\n");
+    }
 };
 
 static int shutdown_participant(

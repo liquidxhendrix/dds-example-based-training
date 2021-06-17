@@ -1,4 +1,6 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+make: *** No rule to make target 'all'.  Stop.
+ 
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -6,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Jun 10 08:58:32 2021
+# Make data base, printed on Thu Jun 17 10:22:17 2021
 
 # Variables
 
@@ -47,7 +49,7 @@ CURDIR := /home/liquidxhendrix/Projects/phase2
 # makefile
 SHELL = /bin/sh
 # environment
-SNAP_DATA = /var/snap/code/65
+SNAP_DATA = /var/snap/code/66
 # makefile (from 'makefile', line 47)
 SYSLIBS = -ldl -lm -lpthread -lrt -no-pie -rdynamic
 # environment
@@ -55,7 +57,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-gb","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:29279
+JOURNAL_STREAM = 8:28876
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -83,13 +85,13 @@ DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-MANAGERPID = 912
+MANAGERPID = 896
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
 VSCODE_CWD = /home/liquidxhendrix/Projects/phase2
 # environment
-GSETTINGS_SCHEMA_DIR = /snap/code/65/usr/share/glib-2.0/schemas
+GSETTINGS_SCHEMA_DIR = /snap/code/66/usr/share/glib-2.0/schemas
 # default
 MAKE_HOST := x86_64-pc-linux-gnu
 # environment
@@ -97,15 +99,15 @@ PATH = /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/RTI-A:@/tmp/.ICE-unix/1172,unix/RTI-A:/tmp/.ICE-unix/1172
+SESSION_MANAGER = local/RTI-A:@/tmp/.ICE-unix/1156,unix/RTI-A:/tmp/.ICE-unix/1156
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
 GDK_PIXBUF_MODULE_FILE = /home/liquidxhendrix/snap/code/common/.cache/gdk-pixbuf-loaders.cache
 # environment
-SNAP = /snap/code/65
+SNAP = /snap/code/66
 # environment
-SNAP_VERSION = 054a9295
+SNAP_VERSION = b4c1bd0a
 # environment
 XDG_MENU_PREFIX = gnome-
 # environment
@@ -115,9 +117,9 @@ DISABLE_WAYLAND = 1
 # environment
 VSCODE_CRASH_REPORTER_START_OPTIONS = {"companyName":"Microsoft","productName":"VSCode","submitURL":"appcenter://code?aid=fba07a4d-84bd-4fc8-a125-9640fc8ce171&uid=6eee5c37-1ac4-4abf-90da-f30768274bbe&iid=6eee5c37-1ac4-4abf-90da-f30768274bbe&sid=6eee5c37-1ac4-4abf-90da-f30768274bbe","uploadToServer":true}
 # environment
-INVOCATION_ID = 65b8562127ba41f68f5024289ff75e79
+INVOCATION_ID = d74f6ea22b4040bd9d5207a55c716828
 # environment
-GDK_PIXBUF_MODULEDIR = /snap/code/65/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
+GDK_PIXBUF_MODULEDIR = /snap/code/66/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # environment
@@ -141,7 +143,7 @@ PWD = /home/liquidxhendrix/Projects/phase2
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1137
+SSH_AGENT_PID = 1120
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # makefile (from 'makefile', line 46)
@@ -193,7 +195,7 @@ COMPILER_FLAGS = -m64 -Wall $(ADDITIONAL_COMPILER_FLAGS)
 # environment
 QT_IM_MODULE = ibus
 # environment
-SNAP_USER_DATA = /home/liquidxhendrix/snap/code/65
+SNAP_USER_DATA = /home/liquidxhendrix/snap/code/66
 # environment
 SHLVL = 1
 # makefile (from 'makefile', line 67)
@@ -205,7 +207,7 @@ DEBUG_SFX =
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-13b23b5b-c0a6-467f-963c-a76436b83e29.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-6535f2b4-f854-435f-917e-970e878cd16b.sock
 # makefile (from 'makefile', line 85)
 EXEC = car_basic_info_subscriber car_basic_info_publisher
 # default
@@ -213,7 +215,7 @@ MAKE_VERSION := 4.2.1
 # environment
 USER = liquidxhendrix
 # environment
-SNAP_REVISION = 65
+SNAP_REVISION = 66
 # makefile
 .DEFAULT_GOAL := x64Linux4gcc7.3.0
 # environment
@@ -225,9 +227,7 @@ DIRECTORIES = objs.dir objs/$(TARGET_ARCH).dir
 # default
 MAKE_COMMAND := make
 # environment
-VSCODE_NODE_CACHED_DATA_DIR = /home/liquidxhendrix/.config/Code/CachedData/054a9295330880ed74ceaedda236253b4f39a335
-# environment
-OLDPWD = /home/liquidxhendrix/Projects
+VSCODE_NODE_CACHED_DATA_DIR = /home/liquidxhendrix/.config/Code/CachedData/b4c1bd0a9b03c749ea011b06c6d2676c8091a70c
 # default
 .VARIABLES := 
 # automatic
@@ -235,7 +235,7 @@ OLDPWD = /home/liquidxhendrix/Projects
 # environment
 LANGUAGE = en_SG:en
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-3594ad60-1.56.2-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-3594ad60-1.57.0-main.sock
 # makefile (from 'makefile', line 44)
 LINKER = $(COMPILER_PATH)$(GCC_PREFIX)g++
 # makefile
@@ -275,16 +275,14 @@ TARGET_ARCH = x64Linux4gcc7.3.0
 # environment
 GJS_DEBUG_TOPICS = JS ERROR;JS LOG
 # makefile (from 'makefile', line 75)
- 
-make: *** No rule to make target 'all'.  Stop.
- 
 LIBS = -L$(NDDSHOME)/lib/$(TARGET_ARCH) -lnddscpp$(SHAREDLIB_SFX)$(DEBUG_SFX) -lnddsc$(SHAREDLIB_SFX)$(DEBUG_SFX) -lnddscore$(SHAREDLIB_SFX)$(DEBUG_SFX) $(SYSLIBS)
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/49577c5c_39f5_4845_912d_b286647d1294
+ 
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/f05bb606_1aca_48e3_9436_33101c9a5e40
 # automatic
 ^F = $(notdir $^)
 # environment
-GNOME_TERMINAL_SERVICE = :1.71
+GNOME_TERMINAL_SERVICE = :1.65
 # default
 SUFFIXES := 
 # environment
@@ -304,9 +302,9 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 1919
+VSCODE_PID = 1774
 # variable set hash-table stats:
-# Load=146/1024=14%, Rehash=0, Collisions=24/199=12%
+# Load=145/1024=14%, Rehash=0, Collisions=24/198=12%
 
 # Pattern-specific Variable Values
 
@@ -314,10 +312,10 @@ VSCODE_PID = 1919
 
 # Directories
 
-# . (device 2053, inode 590248): 20 files, no impossibilities.
+# . (device 2053, inode 590248): 21 files, no impossibilities.
 # objs/x64Linux4gcc7.3.0 (device 2053, inode 917627): No files, no impossibilities so far.
 
-# 20 files, no impossibilities in 2 directories.
+# 21 files, no impossibilities in 2 directories.
 
 # Implicit Rules
 
@@ -428,12 +426,12 @@ objs/x64Linux4gcc7.3.0/car_basic_info.o:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 40 / storage = 857 B / avg = 21 B
-# current buf: size = 8162 B / used = 857 B / count = 40 / avg = 21 B
+# strcache buffers: 1 (0) / strings = 41 / storage = 876 B / avg = 21 B
+# current buf: size = 8162 B / used = 876 B / count = 41 / avg = 21 B
 
-# strcache performance: lookups = 47 / hit rate = 14%
+# strcache performance: lookups = 48 / hit rate = 14%
 # hash-table stats:
-# Load=40/8192=0%, Rehash=0, Collisions=1/47=2%
-# Finished Make data base on Thu Jun 10 08:58:32 2021
+# Load=41/8192=1%, Rehash=0, Collisions=1/48=2%
+# Finished Make data base on Thu Jun 17 10:22:17 2021
 
  
