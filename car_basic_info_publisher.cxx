@@ -81,12 +81,12 @@ int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
 
     /* To load my_custom_qos_profiles.xml, as explained above, we need to modify
      * the  DDSTheParticipantFactory Profile QoSPolicy */
-    DDS_DomainParticipantFactoryQos factory_qos;
-    DDSTheParticipantFactory->get_qos(factory_qos);
+    // DDS_DomainParticipantFactoryQos factory_qos;
+    // DDSTheParticipantFactory->get_qos(factory_qos);
 
     /* We are only going to add one XML file to the url_profile sequence, so we
      * ensure a length of 1,1. */
-    factory_qos.profile.url_profile.ensure_length(1, 1);
+    // factory_qos.profile.url_profile.ensure_length(1, 1);
 
     /* The XML file will be loaded from the working directory. That means, you
      * need to run the example like this:
@@ -96,21 +96,49 @@ int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
      * Note that you can specify the absolute path of the XML QoS file to avoid
      * this problem.
      */
-    factory_qos.profile.url_profile[0] =
-            DDS_String_dup("car_basic_info.xml");
+    // factory_qos.profile.url_profile[0] =
+    //         DDS_String_dup("car_basic_info.xml");
 
-    DDSTheParticipantFactory->set_qos(factory_qos);
+    // DDSTheParticipantFactory->set_qos(factory_qos);
 
+    DDS_DomainParticipantQos participant_qos;
+    DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
+
+    /* free original memory */
+    participant_qos.discovery.initial_peers.maximum(0);
+    
+   /* set new initial peer for sending discovery information  */
+    participant_qos.discovery.initial_peers.maximum(3);
+    participant_qos.discovery.initial_peers.length(3);
+    //participant_qos.discovery.initial_peers[0] = DDS_String_dup("239.255.0.2");
+    participant_qos.discovery.initial_peers[0] = DDS_String_dup("192.168.1.123");
+    participant_qos.discovery.initial_peers[1] = DDS_String_dup("4@builtin.udpv4://127.0.0.1");
+    participant_qos.discovery.initial_peers[2] = DDS_String_dup("builtin.shmem://");
+    //participant_qos.discovery.initial_peers[3] = DDS_String_dup("4@builtin.udpv4://192.168.1.123");
+      
+    /* free original memory */
+    participant_qos.discovery.multicast_receive_addresses.maximum(0);
+    
+    /* set new multicast receive address for receiving multicast
+    discovery information */
+    participant_qos.discovery.multicast_receive_addresses.maximum(1);
+    participant_qos.discovery.multicast_receive_addresses.length(1);
+    participant_qos.discovery.multicast_receive_addresses[0] =    DDS_String_dup("239.255.0.2");    
+    
     // Start communicating in a domain, usually one participant per application
     DDSDomainParticipant *participant =
     DDSTheParticipantFactory->create_participant(
         domain_id,
-        DDS_PARTICIPANT_QOS_DEFAULT,
+        //DDS_PARTICIPANT_QOS_DEFAULT,
+        participant_qos,
         NULL /* listener */,
         DDS_STATUS_MASK_NONE);
     if (participant == NULL) {
         return shutdown_participant(participant, "create_participant error", EXIT_FAILURE);
     }
+
+
+
 
     // A Publisher allows an application to create one or more DataWriters
     DDSPublisher *publisher = participant->create_publisher(
@@ -120,6 +148,8 @@ int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
     if (publisher == NULL) {
         return shutdown_participant(participant, "create_publisher error", EXIT_FAILURE);
     }
+
+
 
     // Register the datatype to use when creating the Topic
     const char *type_name = carBasicInfoTypeSupport::get_type_name();
@@ -161,8 +191,10 @@ int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
      // This DataWriter writes data on "Example carBasicInfo" Topic
     DDSDataWriter *untyped_writer = publisher->create_datawriter_with_profile(
         topic,
-        "ExampleTrainingLibrary",
-        "ExampleTrainingDurabilityProfile",
+        //"ExampleTrainingLibrary",
+        //"ExampleTrainingDurabilityProfile",
+        "car_basic_info_Library",
+        "car_basic_info_Profile",
         writer_listener /* listener */,
         mask);
     if (untyped_writer == NULL) {
@@ -212,6 +244,8 @@ int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
         instanceHandleA = typed_writer->register_instance(*dataA);
         
         dataA->speed = static_cast<DDS_Short>(samples_written);
+        dataA->posX=(double)rand()/(double)RAND_MAX*255;
+        dataA->posY=(double)rand()/(double)RAND_MAX*255;
 
         std::cout << "Writing carBasicInfo, count " << samples_written 
         << std::endl;
@@ -226,6 +260,8 @@ int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
         instanceHandleB = typed_writer->register_instance(*dataB);
         
         dataB->speed = static_cast<DDS_Short>(samples_written);
+        dataB->posX=(double)rand()/(double)RAND_MAX*255;
+        dataB->posY=(double)rand()/(double)RAND_MAX*255;
 
         std::cout << "Writing carBasicInfo, count " << samples_written 
         << std::endl;

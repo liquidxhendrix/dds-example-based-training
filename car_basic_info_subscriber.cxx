@@ -169,7 +169,7 @@ int run_subscriber_application(unsigned int domain_id, unsigned int sample_count
 
     /* We are only going to add one XML file to the url_profile sequence, so we
      * ensure a length of 1,1. */
-    factory_qos.profile.url_profile.ensure_length(1, 1);
+    //factory_qos.profile.url_profile.ensure_length(1, 1);
 
     /* The XML file will be loaded from the working directory. That means, you
      * need to run the example like this:
@@ -179,16 +179,42 @@ int run_subscriber_application(unsigned int domain_id, unsigned int sample_count
      * Note that you can specify the absolute path of the XML QoS file to avoid
      * this problem.
      */
-    factory_qos.profile.url_profile[0] =
-            DDS_String_dup("car_basic_info.xml");
+    // factory_qos.profile.url_profile[0] =
+    //         DDS_String_dup("car_basic_info.xml");
 
-    DDSTheParticipantFactory->set_qos(factory_qos);
+    // DDSTheParticipantFactory->set_qos(factory_qos);
+
+    DDS_DomainParticipantQos participant_qos;
+    DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
+
+    /* free original memory */
+    participant_qos.discovery.initial_peers.maximum(0);
+    
+    /* set new initial peer for sending discovery information  */
+    participant_qos.discovery.initial_peers.maximum(3);
+    participant_qos.discovery.initial_peers.length(3);
+    //participant_qos.discovery.initial_peers[0] = DDS_String_dup("239.255.0.2");
+    participant_qos.discovery.initial_peers[0] = DDS_String_dup("192.168.1.123");
+    participant_qos.discovery.initial_peers[1] = DDS_String_dup("4@builtin.udpv4://127.0.0.1");
+    participant_qos.discovery.initial_peers[2] = DDS_String_dup("builtin.shmem://");
+    //participant_qos.discovery.initial_peers[3] = DDS_String_dup("4@builtin.udpv4://192.168.1.123");
+    
+    /* free original memory */
+    participant_qos.discovery.multicast_receive_addresses.maximum(0);
+    
+    /* set new multicast receive address for receiving multicast
+    discovery information */
+    participant_qos.discovery.multicast_receive_addresses.maximum(1);
+    participant_qos.discovery.multicast_receive_addresses.length(1);
+    participant_qos.discovery.multicast_receive_addresses[0] =    DDS_String_dup("239.255.0.2");    
+
 
     // Start communicating in a domain, usually one participant per application
     DDSDomainParticipant *participant =
     DDSTheParticipantFactory->create_participant(
         domain_id,
-        DDS_PARTICIPANT_QOS_DEFAULT,
+        //DDS_PARTICIPANT_QOS_DEFAULT,
+        participant_qos,
         NULL /* listener */,
         DDS_STATUS_MASK_NONE);
     if (participant == NULL) {
@@ -223,6 +249,44 @@ int run_subscriber_application(unsigned int domain_id, unsigned int sample_count
         return shutdown_participant(participant, "create_topic error", EXIT_FAILURE);
     }
 
+    /* Sequence of parameters for the content filter expression */
+    DDS_StringSeq parameters(3);
+    /* The default parameter list that we will include in the
+     * sequence of parameters will be "1","4" (i.e., 1 <= x <= 4). */
+    //const char *param_list[] = { "100", "200"};
+    const char *param_list[] = { "100", "200", "\'XYZ3456\'"};
+    //const char *param_list[] = { "XYZ3456"};
+    parameters.from_array(param_list, 3);
+
+    /* Create the content filtered topic in case sel_cft
+     * is true.
+     * The Content Filter Expresion has two parameters:
+     * - %0 -- x must be greater or equal than %0.
+     * - %1 -- x must be less or equal than %1.
+     */
+    DDSContentFilteredTopic *cft = NULL;
+    
+    // cft = participant->create_contentfilteredtopic_with_filter(
+    //             "ContentFilteredTopic",
+    //             topic,
+    //             "licenceNumber MATCH %0",
+    //             parameters,
+    //             DDS_STRINGMATCHFILTER_NAME);
+
+    cft = participant->create_contentfilteredtopic(
+                "ContentFilteredTopic",
+                topic,
+                "(licenceNumber MATCH %2) and (posX >= %0 and posX <= %1) and (posY >= %0 and posY <= %1)",
+                parameters);
+
+    // and (posX >= %0 and posX <= %1) and (posY >= %0 and posY <= %1)
+
+    if (cft == NULL) {
+        printf("create_contentfilteredtopic error\n");
+        shutdown_participant(participant, "create_contentfilteredtopic error", EXIT_FAILURE);
+        return -1;
+    }
+    
      /* Create a data reader listener */
     ReaderListener *reader_listener = new ReaderListener();
     if (reader_listener == NULL) {
@@ -231,10 +295,24 @@ int run_subscriber_application(unsigned int domain_id, unsigned int sample_count
     }
 
     // This DataReader reads data on "Example carBasicInfo" Topic
+    // DDSDataReader *untyped_reader = subscriber->create_datareader_with_profile(
+    //     topic,
+    //     "ExampleTrainingLibrary",
+    //     "ExampleTrainingDurabilityProfile",
+    //     NULL,
+    //     DDS_STATUS_MASK_NONE);
+    // if (untyped_reader == NULL) {
+    //     return shutdown_participant(participant, "create_datareader error", EXIT_FAILURE);
+    // }
+
+      // This DataReader reads data on "Example carBasicInfo" with content filtered Topic
     DDSDataReader *untyped_reader = subscriber->create_datareader_with_profile(
+        //cft,
         topic,
-        "ExampleTrainingLibrary",
-        "ExampleTrainingDurabilityProfile",
+        //"ExampleTrainingLibrary",
+        //"ExampleTrainingDurabilityProfile",
+        "car_basic_info_Library",
+        "car_basic_info_Profile",
         NULL,
         DDS_STATUS_MASK_NONE);
     if (untyped_reader == NULL) {
@@ -273,30 +351,30 @@ int run_subscriber_application(unsigned int domain_id, unsigned int sample_count
 
     // -->UNCOMMENT FOR WAITSET IMPLEMENTATION
     // WaitSet will be woken when the attached condition is triggered
-    // DDSWaitSet waitset;
-    // retcode = waitset.attach_condition(read_condition);
-    // if (retcode != DDS_RETCODE_OK) {
-    //     return shutdown_participant(participant, "attach_condition error", EXIT_FAILURE);
-    // }
+    DDSWaitSet waitset;
+    retcode = waitset.attach_condition(read_condition);
+    if (retcode != DDS_RETCODE_OK) {
+        return shutdown_participant(participant, "attach_condition error", EXIT_FAILURE);
+    }
 
-    // Main loop. Wait for data to arrive, and process when it arrives
-    // unsigned int samples_read = 0;
-    // while (!shutdown_requested && samples_read < sample_count) {
-    //     DDSConditionSeq active_conditions_seq;
+    //Main loop. Wait for data to arrive, and process when it arrives
+    unsigned int samples_read = 0;
+    while (!shutdown_requested && samples_read < sample_count) {
+        DDSConditionSeq active_conditions_seq;
 
-    //     // Wait for data and report if it does not arrive in 1 second
-    //     DDS_Duration_t wait_timeout = { 1, 0 };
-    //     retcode = waitset.wait(active_conditions_seq, wait_timeout);
+        // Wait for data and report if it does not arrive in 1 second
+        DDS_Duration_t wait_timeout = { 1, 0 };
+        retcode = waitset.wait(active_conditions_seq, wait_timeout);
 
-    //     if (retcode == DDS_RETCODE_OK) {
-    //         // If the read condition is triggered, process data
-    //         samples_read += process_data(typed_reader);
-    //     } else {
-    //         if (retcode == DDS_RETCODE_TIMEOUT) {
-    //             std::cout << "No data after 1 second" << std::endl;
-    //         }
-    //     }
-    // }
+        if (retcode == DDS_RETCODE_OK) {
+            // If the read condition is triggered, process data
+            samples_read += process_data(typed_reader);
+        } else {
+            if (retcode == DDS_RETCODE_TIMEOUT) {
+                std::cout << "No data after 1 second" << std::endl;
+            }
+        }
+    }
     // <--UNCOMMENT FOR WAITSET IMPLEMENTATION
     
     // -->UNCOMMENT FOR POLLING IMPLEMENTATION
@@ -308,40 +386,42 @@ int run_subscriber_application(unsigned int domain_id, unsigned int sample_count
 
         // -->UNCOMMENT FOR LISTENER IMPLEMENTATION
     /* Main loop */
-    for (count = 0; (!shutdown_requested) && ((sample_count == 0) || (count < sample_count)); ++count) {
+    
+    // <--UNCOMMENT FOR POLLING IMPLEMENTATION
+    // for (count = 0; (!shutdown_requested) && ((sample_count == 0) || (count < sample_count)); ++count) {
  
-    carBasicInfoSeq data_seq;     // Sequence of received data
-    DDS_SampleInfoSeq info_seq; // Metadata associated with samples in data_seq
+    // carBasicInfoSeq data_seq;     // Sequence of received data
+    // DDS_SampleInfoSeq info_seq; // Metadata associated with samples in data_seq
   
-    std::cout << "Read Loop" << std::endl;
-    NDDSUtility::sleep(receive_period);
+    // std::cout << "Read Loop" << std::endl;
+    // NDDSUtility::sleep(receive_period);
  
-    // Take available data from DataReader's queue
-    typed_reader->take(
-        data_seq,
-        info_seq,
-        DDS_LENGTH_UNLIMITED,
-        DDS_ANY_SAMPLE_STATE,
-        DDS_ANY_VIEW_STATE,
-        DDS_ANY_INSTANCE_STATE);
+    // // Take available data from DataReader's queue
+    // typed_reader->take(
+    //     data_seq,
+    //     info_seq,
+    //     DDS_LENGTH_UNLIMITED,
+    //     DDS_ANY_SAMPLE_STATE,
+    //     DDS_ANY_VIEW_STATE,
+    //     DDS_ANY_INSTANCE_STATE);
 
-    // Iterate over all available data
-    for (int i = 0; i < data_seq.length(); ++i) {
-        // Check if a sample is an instance lifecycle event
-        if (info_seq[i].valid_data) {
-            // Print data
-            std::cout << "Received data" << std::endl;
-            carBasicInfoTypeSupport::print_data(&data_seq[i]);
-         } else {  // This is an instance lifecycle event with no data payload.
-            std::cout << "Invalid data" << std::endl;
-        }
-    }
-    // Data loaned from Connext for performance. Return loan when done.
-    DDS_ReturnCode_t retcode = typed_reader->return_loan(data_seq, info_seq);
-    if (retcode != DDS_RETCODE_OK) {
-        std::cerr << "return loan error " << retcode << std::endl;
-    }
-    }
+    // // Iterate over all available data
+    // for (int i = 0; i < data_seq.length(); ++i) {
+    //     // Check if a sample is an instance lifecycle event
+    //     if (info_seq[i].valid_data) {
+    //         // Print data
+    //         std::cout << "Received data" << std::endl;
+    //         carBasicInfoTypeSupport::print_data(&data_seq[i]);
+    //      } else {  // This is an instance lifecycle event with no data payload.
+    //         std::cout << "Invalid data" << std::endl;
+    //     }
+    // }
+    // // Data loaned from Connext for performance. Return loan when done.
+    // DDS_ReturnCode_t retcode = typed_reader->return_loan(data_seq, info_seq);
+    // if (retcode != DDS_RETCODE_OK) {
+    //     std::cerr << "return loan error " << retcode << std::endl;
+    // }
+    // }
     // <--UNCOMMENT FOR POLLING IMPLEMENTATION
 
 
