@@ -26,6 +26,71 @@ static int shutdown_participant(
     const char *shutdown_message,
     int status);
 
+    // Process data. Returns number of samples processed.
+unsigned int process_data(carBasicInfoDataReader *typed_reader)
+{
+    carBasicInfoSeq data_seq;     // Sequence of received data
+    DDS_SampleInfoSeq info_seq; // Metadata associated with samples in data_seq
+    unsigned int samples_read = 0;
+
+    // Take available data from DataReader's queue
+    typed_reader->take(
+        data_seq,
+        info_seq,
+        DDS_LENGTH_UNLIMITED,
+        DDS_ANY_SAMPLE_STATE,
+        DDS_ANY_VIEW_STATE,
+        DDS_ANY_INSTANCE_STATE);
+
+    // Iterate over all available data
+    for (int i = 0; i < data_seq.length(); ++i) {
+        // Check if a sample is an instance lifecycle event
+
+        //Exercise #9 - Print Instance state
+
+        std::cout << "Instance State:";
+       
+            switch (info_seq[i].instance_state){
+
+            case DDS_ALIVE_INSTANCE_STATE:
+            std::cout << "DDS_ALIVE_INSTANCE_STATE"<< std::endl;
+        
+            break; 
+
+            case DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE:
+            std::cout << "DDS_NOT_ALIVE_DISPOSED_INSTANCE_STATE"<< std::endl;
+            break; 
+
+            case DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE:
+            std::cout << "DDS_NOT_ALIVE_NO_WRITERS_INSTANCE_STATE"<< std::endl;
+            break;             
+
+            default:
+            std::cout << "UNKNOWN"<< std::endl;
+            break; 
+        }
+
+        if (info_seq[i].valid_data) {
+
+            // Print data
+            std::cout << "Received data" << std::endl;
+            carBasicInfoTypeSupport::print_data(&data_seq[i]);
+            samples_read++;
+        } else {  // This is an instance lifecycle event with no data payload.
+            std::cout << "Received instance state notification" << std::endl;
+            
+        }
+    }
+    // Data loaned from Connext for performance. Return loan when done.
+    DDS_ReturnCode_t retcode = typed_reader->return_loan(data_seq, info_seq);
+    if (retcode != DDS_RETCODE_OK) {
+        std::cerr << "return loan error " << retcode << std::endl;
+    }
+
+    return samples_read;
+}
+
+
 class ReaderListener : public DDSDataReaderListener {
 public:
     virtual void on_requested_deadline_missed(
@@ -65,10 +130,22 @@ public:
     }
 
     virtual void on_subscription_matched(
-            DDSDataReader * /*reader*/,
-            const DDS_SubscriptionMatchedStatus & /*status*/)
+            DDSDataReader *reader /*reader*/,
+            const DDS_SubscriptionMatchedStatus &status /*status*/)
     {
-        printf("ReaderListener: on_subscription_matched() -- FROM ZHIKAI\n");
+        
+        printf("ReaderListener: on_subscription_matched() -- FROM ZHIKAI\n");               
+
+    DDS_PublicationBuiltinTopicData data;
+    DDS_ExceptionCode_t exception_code;
+
+    reader->get_matched_publication_data(data, status.last_publication_handle);
+
+            printf("-----\nFound topic \"%s\"\n",
+                   data.topic_name);
+
+            printf("-----\nType Name \"%s\"\n",
+                   data.type_name);
     }
 
     virtual void on_data_available(DDSDataReader *reader);
@@ -88,7 +165,27 @@ void ReaderListener::on_data_available(DDSDataReader *reader)
         return;
     }
 
-    retcode = listeners_reader->take(
+    process_data(listeners_reader);
+}
+
+class BuiltinPublicationListener : public DDSDataReaderListener {
+public:
+    virtual void on_data_available(DDSDataReader *reader);
+};
+
+void BuiltinPublicationListener::on_data_available(DDSDataReader *reader)
+{
+    DDSPublicationBuiltinTopicDataDataReader *builtin_reader =
+            (DDSPublicationBuiltinTopicDataDataReader *) reader;
+    DDS_PublicationBuiltinTopicDataSeq data_seq;
+    DDS_SampleInfoSeq info_seq;
+    DDS_ReturnCode_t retcode;
+    DDS_ExceptionCode_t exception_code;
+
+    DDSSubscriber *subscriber = NULL;
+    DDSDomainParticipant *participant = NULL;
+
+    retcode = builtin_reader->take(
             data_seq,
             info_seq,
             DDS_LENGTH_UNLIMITED,
@@ -96,65 +193,39 @@ void ReaderListener::on_data_available(DDSDataReader *reader)
             DDS_ANY_VIEW_STATE,
             DDS_ANY_INSTANCE_STATE);
 
-    if (retcode == DDS_RETCODE_NO_DATA) {
-        return;
-    } else if (retcode != DDS_RETCODE_OK) {
-        printf("take error %d\n", retcode);
-        return;
-    }
-
-    for (i = 0; i < data_seq.length(); ++i) {
-        /* If the reference we get is valid data, it means we have actual
-         * data available, otherwise we got metadata */
-        if (info_seq[i].valid_data) {
-            std::cout << "Received data" << std::endl;
-            carBasicInfoTypeSupport::print_data(&data_seq[i]);
-        } else {
-            printf("   Got metadata\n");
-        }
-    }
-
-    retcode = listeners_reader->return_loan(data_seq, info_seq);
     if (retcode != DDS_RETCODE_OK) {
-        printf("return loan error %d\n", retcode);
+        printf("***Error: failed to access data from the built-in reader\n");
+        return;
     }
-}
 
-// Process data. Returns number of samples processed.
-unsigned int process_data(carBasicInfoDataReader *typed_reader)
-{
-    carBasicInfoSeq data_seq;     // Sequence of received data
-    DDS_SampleInfoSeq info_seq; // Metadata associated with samples in data_seq
-    unsigned int samples_read = 0;
-
-    // Take available data from DataReader's queue
-    typed_reader->take(
-        data_seq,
-        info_seq,
-        DDS_LENGTH_UNLIMITED,
-        DDS_ANY_SAMPLE_STATE,
-        DDS_ANY_VIEW_STATE,
-        DDS_ANY_INSTANCE_STATE);
-
-    // Iterate over all available data
     for (int i = 0; i < data_seq.length(); ++i) {
-        // Check if a sample is an instance lifecycle event
         if (info_seq[i].valid_data) {
-            // Print data
-            std::cout << "Received data" << std::endl;
-            carBasicInfoTypeSupport::print_data(&data_seq[i]);
-            samples_read++;
-        } else {  // This is an instance lifecycle event with no data payload.
-            std::cout << "Received instance state notification" << std::endl;
+            printf("-----\nFound topic \"%s\"\nparticipant: "
+                   "%08x%08x%08x\ndatawriter: %08x%08x%08x\ntype:\n",
+                   data_seq[i].topic_name,
+                   data_seq[i].participant_key.value[0],
+                   data_seq[i].participant_key.value[1],
+                   data_seq[i].participant_key.value[2],
+                   data_seq[i].key.value[0],
+                   data_seq[i].key.value[1],
+                   data_seq[i].key.value[2]);
+
+            if (data_seq[i].type_code == NULL) {
+                printf("No type code received, perhaps increase "
+                       "type_code_max_serialized_length?\n");
+                continue;
+            }
+
+            /* Using the type_code propagated we print the data type
+             * with print_IDL(). */
+            data_seq[i].type_code->print_IDL(2, exception_code);
+            if (exception_code != DDS_NO_EXCEPTION_CODE) {
+                printf("Error***: print_IDL returns exception code %d",
+                       exception_code);
+            }
         }
     }
-    // Data loaned from Connext for performance. Return loan when done.
-    DDS_ReturnCode_t retcode = typed_reader->return_loan(data_seq, info_seq);
-    if (retcode != DDS_RETCODE_OK) {
-        std::cerr << "return loan error " << retcode << std::endl;
-    }
-
-    return samples_read;
+    builtin_reader->return_loan(data_seq, info_seq);
 }
 
 int run_subscriber_application(unsigned int domain_id, unsigned int sample_count)
@@ -187,26 +258,26 @@ int run_subscriber_application(unsigned int domain_id, unsigned int sample_count
     DDS_DomainParticipantQos participant_qos;
     DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
 
-    /* free original memory */
-    participant_qos.discovery.initial_peers.maximum(0);
+    // /* free original memory */
+    // participant_qos.discovery.initial_peers.maximum(0);
     
-    /* set new initial peer for sending discovery information  */
-    participant_qos.discovery.initial_peers.maximum(3);
-    participant_qos.discovery.initial_peers.length(3);
-    //participant_qos.discovery.initial_peers[0] = DDS_String_dup("239.255.0.2");
-    participant_qos.discovery.initial_peers[0] = DDS_String_dup("192.168.1.123");
-    participant_qos.discovery.initial_peers[1] = DDS_String_dup("4@builtin.udpv4://127.0.0.1");
-    participant_qos.discovery.initial_peers[2] = DDS_String_dup("builtin.shmem://");
-    //participant_qos.discovery.initial_peers[3] = DDS_String_dup("4@builtin.udpv4://192.168.1.123");
+    // /* set new initial peer for sending discovery information  */
+    // participant_qos.discovery.initial_peers.maximum(3);
+    // participant_qos.discovery.initial_peers.length(3);
+    // //participant_qos.discovery.initial_peers[0] = DDS_String_dup("239.255.0.2");
+    // participant_qos.discovery.initial_peers[0] = DDS_String_dup("4@builtin.udpv4://192.168.1.111");
+    // participant_qos.discovery.initial_peers[1] = DDS_String_dup("4@builtin.udpv4://127.0.0.1");
+    // participant_qos.discovery.initial_peers[2] = DDS_String_dup("builtin.shmem://");
+    // //participant_qos.discovery.initial_peers[3] = DDS_String_dup("4@builtin.udpv4://192.168.1.123");
     
-    /* free original memory */
-    participant_qos.discovery.multicast_receive_addresses.maximum(0);
+    // /* free original memory */
+    // participant_qos.discovery.multicast_receive_addresses.maximum(0);
     
-    /* set new multicast receive address for receiving multicast
-    discovery information */
-    participant_qos.discovery.multicast_receive_addresses.maximum(1);
-    participant_qos.discovery.multicast_receive_addresses.length(1);
-    participant_qos.discovery.multicast_receive_addresses[0] =    DDS_String_dup("239.255.0.2");    
+    // /* set new multicast receive address for receiving multicast
+    // discovery information */
+    // participant_qos.discovery.multicast_receive_addresses.maximum(1);
+    // participant_qos.discovery.multicast_receive_addresses.length(1);
+    // participant_qos.discovery.multicast_receive_addresses[0] =    DDS_String_dup("239.255.0.2");    
 
 
     // Start communicating in a domain, usually one participant per application
@@ -306,32 +377,32 @@ int run_subscriber_application(unsigned int domain_id, unsigned int sample_count
     // }
 
       // This DataReader reads data on "Example carBasicInfo" with content filtered Topic
-    DDSDataReader *untyped_reader = subscriber->create_datareader_with_profile(
-        //cft,
-        topic,
-        //"ExampleTrainingLibrary",
-        //"ExampleTrainingDurabilityProfile",
-        "car_basic_info_Library",
-        "car_basic_info_Profile",
-        NULL,
-        DDS_STATUS_MASK_NONE);
-    if (untyped_reader == NULL) {
-        return shutdown_participant(participant, "create_datareader error", EXIT_FAILURE);
-    }
-
-    // // This DataReader reads data on "Example carBasicInfo" Topic with Listener
     // DDSDataReader *untyped_reader = subscriber->create_datareader_with_profile(
+    //     //cft,
     //     topic,
-    //     "ExampleTrainingLibrary",
-    //     "ExampleTrainingDurabilityProfile",
-    //     reader_listener,
-    //     DDS_SUBSCRIPTION_MATCHED_STATUS|
-    //     DDS_LIVELINESS_CHANGED_STATUS|
-    //     DDS_DATA_AVAILABLE_STATUS);
+    //     //"ExampleTrainingLibrary",
+    //     //"ExampleTrainingDurabilityProfile",
+    //     "car_basic_info_Library",
+    //     "car_basic_info_Profile",
+    //     NULL,
+    //     DDS_STATUS_MASK_NONE);
     // if (untyped_reader == NULL) {
-    //     delete reader_listener;
     //     return shutdown_participant(participant, "create_datareader error", EXIT_FAILURE);
     // }
+
+    // This DataReader reads data on "Example carBasicInfo" Topic with Listener
+    DDSDataReader *untyped_reader = subscriber->create_datareader_with_profile(
+        topic,
+        "car_basic_info_Library",
+        "car_basic_info_Profile",
+        reader_listener,
+        DDS_SUBSCRIPTION_MATCHED_STATUS|
+        DDS_LIVELINESS_CHANGED_STATUS|
+        DDS_DATA_AVAILABLE_STATUS);
+    if (untyped_reader == NULL) {
+        delete reader_listener;
+        return shutdown_participant(participant, "create_datareader error", EXIT_FAILURE);
+    }
 
     // Narrow casts from a untyped DataReader to a reader of your type
     carBasicInfoDataReader *typed_reader =
@@ -349,42 +420,69 @@ int run_subscriber_application(unsigned int domain_id, unsigned int sample_count
         return shutdown_participant(participant, "create_readcondition error", EXIT_FAILURE);
     }
 
-    // -->UNCOMMENT FOR WAITSET IMPLEMENTATION
-    // WaitSet will be woken when the attached condition is triggered
-    DDSWaitSet waitset;
-    retcode = waitset.attach_condition(read_condition);
-    if (retcode != DDS_RETCODE_OK) {
-        return shutdown_participant(participant, "attach_condition error", EXIT_FAILURE);
-    }
+    //--> Execise #9 Install built in endpoint reader to print out type and topic information
 
-    //Main loop. Wait for data to arrive, and process when it arrives
-    unsigned int samples_read = 0;
-    while (!shutdown_requested && samples_read < sample_count) {
-        DDSConditionSeq active_conditions_seq;
-
-        // Wait for data and report if it does not arrive in 1 second
-        DDS_Duration_t wait_timeout = { 1, 0 };
-        retcode = waitset.wait(active_conditions_seq, wait_timeout);
-
-        if (retcode == DDS_RETCODE_OK) {
-            // If the read condition is triggered, process data
-            samples_read += process_data(typed_reader);
-        } else {
-            if (retcode == DDS_RETCODE_TIMEOUT) {
-                std::cout << "No data after 1 second" << std::endl;
-            }
-        }
-    }
-    // <--UNCOMMENT FOR WAITSET IMPLEMENTATION
-    
-    // -->UNCOMMENT FOR POLLING IMPLEMENTATION
-    /* Main loop */
-    // for (count = 0; (sample_count == 0) || (count < sample_count); ++count) {
-    //     NDDSUtility::sleep(receive_period);
+    /* First get the built-in subscriber */
+    // DDSSubscriber *builtin_subscriber = participant->get_builtin_subscriber();
+    // if (builtin_subscriber == NULL) {
+    //     printf("***Error: failed to create builtin subscriber\n");
+    //     return shutdown_participant(participant, "create builtin subscriber error", EXIT_FAILURE);
     // }
+
+    // /* Then get the data reader for the built-in subscriber */
+    // DDSPublicationBuiltinTopicDataDataReader *builtin_publication_datareader =
+    //         (DDSPublicationBuiltinTopicDataDataReader *) builtin_subscriber
+    //                 ->lookup_datareader(DDS_PUBLICATION_TOPIC_NAME);
+    // if (builtin_publication_datareader == NULL) {
+    //     printf("***Error: failed to create builtin publication data reader\n");
+    //     return shutdown_participant(participant, "create builtin publication data reader error", EXIT_FAILURE);
+    // }
+
+    // /* Finally install the listener */
+    // BuiltinPublicationListener *builtin_publication_listener =
+    //         new BuiltinPublicationListener();
+    // builtin_publication_datareader->set_listener(
+    //         builtin_publication_listener,
+    //         DDS_DATA_AVAILABLE_STATUS);
+
+    //<-- Execise #9 Install built in endpoint reader to print out type and topic information
+
+    // // -->UNCOMMENT FOR WAITSET IMPLEMENTATION
+    // // WaitSet will be woken when the attached condition is triggered
+    // DDSWaitSet waitset;
+    // retcode = waitset.attach_condition(read_condition);
+    // if (retcode != DDS_RETCODE_OK) {
+    //     return shutdown_participant(participant, "attach_condition error", EXIT_FAILURE);
+    // }
+
+    // //Main loop. Wait for data to arrive, and process when it arrives
+    // unsigned int samples_read = 0;
+    // while (!shutdown_requested && samples_read < sample_count) {
+    //     DDSConditionSeq active_conditions_seq;
+
+    //     // Wait for data and report if it does not arrive in 1 second
+    //     DDS_Duration_t wait_timeout = { 1, 0 };
+    //     retcode = waitset.wait(active_conditions_seq, wait_timeout);
+
+    //     if (retcode == DDS_RETCODE_OK) {
+    //         // If the read condition is triggered, process data
+    //         samples_read += process_data(typed_reader);
+    //     } else {
+    //         if (retcode == DDS_RETCODE_TIMEOUT) {
+    //             std::cout << "No data after 1 second" << std::endl;
+    //         }
+    //     }
+    // }
+    // // <--UNCOMMENT FOR WAITSET IMPLEMENTATION
+    
+    // -->UNCOMMENT FOR LISTENER IMPLEMENTATION
+    /* Main loop */
+    for (count = 0; (!shutdown_requested) && ((sample_count == 0) || (count < sample_count)); ++count) {
+        NDDSUtility::sleep(receive_period);
+    }
     // <--UNCOMMENT FOR LISTENER IMPLEMENTATION
 
-        // -->UNCOMMENT FOR LISTENER IMPLEMENTATION
+        
     /* Main loop */
     
     // <--UNCOMMENT FOR POLLING IMPLEMENTATION

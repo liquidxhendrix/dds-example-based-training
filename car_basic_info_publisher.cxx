@@ -104,26 +104,26 @@ int run_publisher_application(unsigned int domain_id, unsigned int sample_count)
     DDS_DomainParticipantQos participant_qos;
     DDSTheParticipantFactory->get_default_participant_qos(participant_qos);
 
-    /* free original memory */
-    participant_qos.discovery.initial_peers.maximum(0);
+//     /* free original memory */
+//     participant_qos.discovery.initial_peers.maximum(0);
     
-   /* set new initial peer for sending discovery information  */
-    participant_qos.discovery.initial_peers.maximum(3);
-    participant_qos.discovery.initial_peers.length(3);
-    //participant_qos.discovery.initial_peers[0] = DDS_String_dup("239.255.0.2");
-    participant_qos.discovery.initial_peers[0] = DDS_String_dup("192.168.1.123");
-    participant_qos.discovery.initial_peers[1] = DDS_String_dup("4@builtin.udpv4://127.0.0.1");
-    participant_qos.discovery.initial_peers[2] = DDS_String_dup("builtin.shmem://");
-    //participant_qos.discovery.initial_peers[3] = DDS_String_dup("4@builtin.udpv4://192.168.1.123");
+//    /* set new initial peer for sending discovery information  */
+//     participant_qos.discovery.initial_peers.maximum(3);
+//     participant_qos.discovery.initial_peers.length(3);
+//     //participant_qos.discovery.initial_peers[0] = DDS_String_dup("239.255.0.2");
+//     participant_qos.discovery.initial_peers[0] = DDS_String_dup("4@builtin.udpv4://192.168.1.111");
+//     participant_qos.discovery.initial_peers[1] = DDS_String_dup("4@builtin.udpv4://127.0.0.1");
+//     participant_qos.discovery.initial_peers[2] = DDS_String_dup("builtin.shmem://");
+//     //participant_qos.discovery.initial_peers[3] = DDS_String_dup("4@builtin.udpv4://192.168.1.123");
       
-    /* free original memory */
-    participant_qos.discovery.multicast_receive_addresses.maximum(0);
+//     /* free original memory */
+//     participant_qos.discovery.multicast_receive_addresses.maximum(0);
     
-    /* set new multicast receive address for receiving multicast
-    discovery information */
-    participant_qos.discovery.multicast_receive_addresses.maximum(1);
-    participant_qos.discovery.multicast_receive_addresses.length(1);
-    participant_qos.discovery.multicast_receive_addresses[0] =    DDS_String_dup("239.255.0.2");    
+//     /* set new multicast receive address for receiving multicast
+//     discovery information */
+//     participant_qos.discovery.multicast_receive_addresses.maximum(1);
+//     participant_qos.discovery.multicast_receive_addresses.length(1);
+//     participant_qos.discovery.multicast_receive_addresses[0] =    DDS_String_dup("239.255.0.2");    
     
     // Start communicating in a domain, usually one participant per application
     DDSDomainParticipant *participant =

@@ -75,6 +75,14 @@ XML" chapter in the RTI Connext DDS Core Libraries User's Manual.
                 <subscription_name>
                     <name>car_basic_infoDataReader</name>
                 </subscription_name>
+		<multicast> 
+		      <value> 
+		        <element> 
+		          <!-- Must be a valid multicast address-->
+		          <receive_address>239.255.0.99</receive_address> 
+		        </element> 
+		      </value> 
+		    </multicast> 	
             </datareader_qos>
             <domain_participant_qos>
                 <!--
@@ -86,11 +94,12 @@ XML" chapter in the RTI Connext DDS Core Libraries User's Manual.
                     <name>car_basic_infoParticipant_ZHIKAI</name>
                     <role_name>car_basic_infoParticipantRole</role_name>
                 </participant_name>
-		 <discovery>
+		<discovery>
                     <initial_peers>
-                    	<element>4@builtin.udpv4://192.168.1.123</element>
-                     </initial_peers>
+        	            <element>239.255.0.1</element>
+                    </initial_peers>
                     <multicast_receive_addresses>
+	                    <element>239.255.0.1</element>
                     </multicast_receive_addresses>
                 </discovery>
             </domain_participant_qos>
